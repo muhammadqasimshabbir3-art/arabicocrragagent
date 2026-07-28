@@ -1,0 +1,31 @@
+{
+  "python_version": "3.12",
+  "dependencies": ["."],
+  "graphs": {
+    "agent": "./src/agent/graph.py:graph"
+  },
+  "http": {
+    "cors": {
+      "allow_origins": [
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+        "http://localhost:8501",
+        "http://127.0.0.1:8501",
+        "http://127.0.0.1:2024",
+        "http://localhost:3000",
+        "http://localhost:8000",
+        "http://localhost:2024",
+        "https://smith.langchain.com",
+        "http://smith.langchain.com",
+        "*"
+      ],
+      "allow_methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH", "HEAD"],
+      "allow_headers": ["*", "Access-Control-Request-Private-Network"],
+      "allow_credentials": true,
+      "allow_origin_regex": ".*",
+      "expose_headers": ["*"],
+      "allow_private_network": true
+    }
+  },
+  "dockerfile_lines": []
+}
