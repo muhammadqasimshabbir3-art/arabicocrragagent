@@ -37,10 +37,17 @@ RUN uv pip uninstall --system pip setuptools wheel && rm -f /usr/bin/uv /usr/bin
 
 WORKDIR /deps/ArabicOCRRAGAgent
 
+# Alias Railway DATABASE_URL/REDIS_URL → LangGraph DATABASE_URI/REDIS_URI
+COPY deploy/railway-entrypoint.sh /deploy/railway-entrypoint.sh
+RUN chmod +x /deploy/railway-entrypoint.sh
+
 RUN useradd --create-home --uid 10001 --shell /usr/sbin/nologin appuser \
     && mkdir -p /deps/ArabicOCRRAGAgent/models /deps/ArabicOCRRAGAgent/data/chroma \
     && chown -R appuser:appuser /deps/ArabicOCRRAGAgent
 USER appuser
+
+# Base image ENTRYPOINT is /storage/entrypoint.sh — wrap it for Railway env aliases.
+ENTRYPOINT ["/deploy/railway-entrypoint.sh"]
 
 EXPOSE 8000
 

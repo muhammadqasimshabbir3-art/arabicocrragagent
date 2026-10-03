@@ -133,8 +133,9 @@ GROQ_MODEL=openai/gpt-oss-120b
 
 1. Push to GitHub.
 2. **Railway** — Root Directory `src` → vars from `src/deploy/.env.railway.example` → `/ok`.
-3. **Vercel** — Root Directory `frontend` → `VITE_LANGGRAPH_API_URL` = Railway URL.
-4. Railway `CORS_ALLOW_ORIGINS` = Vercel origin → restart.
+3. **Vercel** — [arabicocrragagent.vercel.app](https://arabicocrragagent.vercel.app/) · Root `frontend` ·  
+   `VITE_LANGGRAPH_API_URL=https://arabicocrragagent-production.up.railway.app` → redeploy.
+4. Railway `CORS_ALLOW_ORIGINS=https://arabicocrragagent.vercel.app,https://smith.langchain.com` → restart.
 
 ---
 

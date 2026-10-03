@@ -25,10 +25,24 @@ Scripts keep local `VITE_LANGGRAPH_API_URL` + CORS so frontend ↔ backend conne
 2. Service **Settings → Root Directory** = `src`.
 3. Builder picks up `src/Dockerfile` + `src/railway.json`.
 4. Port **8000**; `PORT=8000`.
-5. Variables from [`src/deploy/.env.railway.example`](../src/deploy/.env.railway.example).
-6. Volume at `/deps/ArabicOCRRAGAgent` (models + chroma).
-7. `curl https://YOUR-SERVICE.up.railway.app/ok`
-8. After Vercel: set `CORS_ALLOW_ORIGINS` to the Vercel origin.
+5. **Add Postgres + Redis** in the same Railway project (required by `langchain/langgraph-api`).
+6. On the agent service, set reference vars (LangGraph expects these exact names):
+
+```bash
+DATABASE_URI=${{Postgres.DATABASE_URL}}
+REDIS_URI=${{Redis.REDIS_URL}}
+```
+
+   Without `DATABASE_URI`, startup crashes with:  
+   `AttributeError: 'NoneType' object has no attribute 'encode'` (psycopg).
+7. Other variables from [`src/deploy/.env.railway.example`](../src/deploy/.env.railway.example).
+8. Volume at `/deps/ArabicOCRRAGAgent` (models + chroma).
+9. `curl https://arabicocrragagent-production.up.railway.app/ok`
+10. CORS for the UI:
+
+```bash
+CORS_ALLOW_ORIGINS=https://arabicocrragagent.vercel.app,https://smith.langchain.com
+```
 
 ```bash
 GROQ_API_KEY=...
@@ -36,6 +50,8 @@ GROQ_MODEL=openai/gpt-oss-120b
 MODELS_DIR=/deps/ArabicOCRRAGAgent/models
 VECTORSTORE_PERSIST_DIR=/deps/ArabicOCRRAGAgent/data/chroma
 OCR_ENGINE=digital
+DATABASE_URI=${{Postgres.DATABASE_URL}}
+REDIS_URI=${{Redis.REDIS_URL}}
 ```
 
 Use `openai/gpt-oss-20b` only if you need lower cost/latency. Do **not** use retired `llama-3.1-8b-instant` / `llama-3.3-70b-versatile`.
