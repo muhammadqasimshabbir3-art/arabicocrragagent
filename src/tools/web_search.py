@@ -4,9 +4,7 @@ from __future__ import annotations
 
 import re
 
-from langchain_core.tools import tool
-
-from utils.async_utils import run_in_thread
+from core.utils.async_utils import run_in_thread
 
 
 def extract_search_query(text: str) -> str:
@@ -117,22 +115,13 @@ def web_search_sync(query: str, max_results: int = 5) -> str:
         )
 
 
-@tool
-async def web_search(query: str, max_results: int = 5) -> str:
-    """Search the internet for current information, news, and facts.
-
-    Use when the user asks for live/online information that is not in the
-    local knowledge database or uploaded documents.
-
-    Args:
-        query: The search query.
-        max_results: Maximum number of results (default 5).
-    """
+async def web_search_async(query: str, max_results: int = 5) -> str:
+    """Async wrapper around web_search_sync for graph nodes."""
     return await run_in_thread(web_search_sync, query, max_results)
 
 
 __all__ = [
-    "web_search",
+    "web_search_async",
     "web_search_sync",
     "extract_search_query",
     "wants_profile_screenshot",

@@ -1,0 +1,45 @@
+# Secrets
+.env
+.env.*
+!.env.example
+!deploy/.env.railway.example
+.venv/
+venv/
+
+# Git / IDE
+.git
+.github
+.idea
+.vscode
+.cursor
+*.swp
+.DS_Store
+
+# Large weights — mount a Railway volume at /deps/.../models
+models/**
+!models/README.md
+**/model.safetensors
+data/chroma/
+
+# Caches
+.langgraph_api/
+__pycache__/
+**/__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+dist/
+build/
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Docs not needed in image
+*.md
+!README.md
+!models/README.md
+!deploy/README.md
+deploy/
+*.log

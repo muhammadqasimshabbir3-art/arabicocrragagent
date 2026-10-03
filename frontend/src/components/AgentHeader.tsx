@@ -1,5 +1,6 @@
-import { Radio, ScanText } from "lucide-react";
+import { Github, Linkedin, Radio, ScanText, Trophy } from "lucide-react";
 import type { ServerStatus } from "../hooks/useServerHealth";
+import { AUTHOR } from "../lib/authorLinks";
 
 interface AgentHeaderProps {
   serverStatus: ServerStatus;
@@ -37,7 +38,40 @@ export function AgentHeader({
         </div>
 
         <div className="topbar-actions">
-          <div className={`status-pill ${serverStatus}`}>
+          <nav className="header-social" aria-label={isAr ? "ملفات المؤلف" : "Author profiles"}>
+            <a
+              href={AUTHOR.github}
+              target="_blank"
+              rel="noopener noreferrer"
+              title="GitHub"
+              aria-label="GitHub"
+            >
+              <Github size={16} />
+            </a>
+            <a
+              href={AUTHOR.linkedin}
+              target="_blank"
+              rel="noopener noreferrer"
+              title="LinkedIn"
+              aria-label="LinkedIn"
+            >
+              <Linkedin size={16} />
+            </a>
+            <a
+              href={AUTHOR.zindi.profile}
+              target="_blank"
+              rel="noopener noreferrer"
+              title={`Zindi · #${AUTHOR.zindi.rank}`}
+              aria-label={`Zindi rank ${AUTHOR.zindi.rank}`}
+            >
+              <Trophy size={16} />
+            </a>
+          </nav>
+          <div
+            className={`status-pill ${serverStatus}`}
+            role="status"
+            aria-live="polite"
+          >
             <Radio size={14} />
             <span>
               {serverStatus === "online"
@@ -55,7 +89,7 @@ export function AgentHeader({
             </span>
           </div>
           {running && (
-            <div className="status-pill running">
+            <div className="status-pill running" role="status" aria-live="polite">
               <ScanText size={14} />
               <span>{isScanning ? (isAr ? "جاري المسح…" : "Scanning…") : isAr ? "يعمل…" : "Working…"}</span>
             </div>

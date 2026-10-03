@@ -68,9 +68,15 @@ export function buildAgentInput(request: RunRequest) {
     request.document_filename || request.pdf_filename || "uploaded.pdf";
   const summarize = Boolean(request.summarize_only || request.pdf_summarize_only);
 
+  const source = request.search_source ?? "auto";
+  const use_web_search = source === "web";
+  const use_knowledge_base = source === "database";
+
   return {
     user_input: request.user_input.trim(),
     response_language: request.response_language === "en" ? "en" : "ar",
+    use_web_search,
+    use_knowledge_base,
     ...(payload
       ? {
           pdf_data_base64: payload,

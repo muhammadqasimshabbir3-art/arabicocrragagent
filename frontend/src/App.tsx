@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { AgentHeader } from "./components/AgentHeader";
+import { AuthorProfile } from "./components/AuthorProfile";
 import { AgentConfigForm } from "./components/AgentConfigForm";
 import { ConnectionPanel } from "./components/ConnectionPanel";
 import { LiveWorkBanner } from "./components/LiveWorkBanner";
@@ -34,7 +35,7 @@ export default function App() {
   const [pipelineOpen, setPipelineOpen] = useState(false);
   const isAr = uiLang === "ar";
   const isScanning = agent.steps.some(
-    (step) => step.id === "ingest_document" && step.status === "running",
+    (step) => step.id === "summarize_document" && step.status === "running",
   );
   const hasAnswer = Boolean(agent.answer.trim());
   const workInProgress = agent.running && !hasAnswer;
@@ -107,8 +108,10 @@ export default function App() {
       <p className="one-liner">
         {isAr
           ? "ارفع PDF أو صورة أو TXT أو DOCX فيُلخَّص تلقائيًا — أو اسأل من قاعدة المعرفة"
-          : "Upload PDF, image, TXT, or DOCX for auto-summary — or ask the knowledge base"}
+          : "Upload a text-layer PDF, TXT, or DOCX — digital text is extracted, indexed, and answered with citations"}
       </p>
+
+      <AuthorProfile uiLang={uiLang} />
 
       <WorkflowStrip
         steps={agent.steps}

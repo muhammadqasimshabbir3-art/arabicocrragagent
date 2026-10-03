@@ -4,8 +4,8 @@ import pytest
 from langchain_core.messages import HumanMessage
 
 from agent.graph import decision_agent
-from routing.intent import pick_route, wants_summary
-from routing.language import detect_language
+from core.routing.intent import pick_route, wants_summary
+from core.routing.language import detect_language
 
 
 def test_detect_language_arabic():
@@ -201,6 +201,104 @@ def test_pdf_path_wins_over_knowledge_when_file_attached():
         )
         == "query_documents"
     )
+
+
+def test_pick_route_explicit_web_beats_heuristics():
+    messages = [HumanMessage(content="Hello")]
+    assert (
+        pick_route(
+            "Hello",
+            messages,
+            has_document=False,
+            knowledge_available=True,
+            use_web_search=True,
+        )
+        == "web_search"
+    )
+
+
+def test_pick_route_explicit_web_beats_document_path():
+    messages = [HumanMessage(content="What is the conclusion?")]
+    assert (
+        pick_route(
+            "What is the conclusion?",
+            messages,
+            has_document=True,
+            knowledge_available=True,
+            use_web_search=True,
+        )
+        == "web_search"
+    )
+
+
+def test_pick_route_explicit_database_when_kb_ready():
+    messages = [HumanMessage(content="Hello")]
+    assert (
+        pick_route(
+            "Hello",
+            messages,
+            has_document=False,
+            knowledge_available=True,
+            use_knowledge_base=True,
+        )
+        == "query_knowledge_base"
+    )
+
+
+def test_pick_route_explicit_database_empty_kb_falls_back():
+    messages = [HumanMessage(content="Hello")]
+    assert (
+        pick_route(
+            "Hello",
+            messages,
+            has_document=False,
+            knowledge_available=False,
+            use_knowledge_base=True,
+        )
+        == "call_model"
+    )
+
+
+def test_pick_route_web_wins_when_both_toggles_on():
+    messages = [HumanMessage(content="Hello")]
+    assert (
+        pick_route(
+            "Hello",
+            messages,
+            has_document=False,
+            knowledge_available=True,
+            use_web_search=True,
+            use_knowledge_base=True,
+        )
+        == "web_search"
+    )
+
+
+def test_pick_route_document_wins_over_explicit_database():
+    """Database toggle applies only when no file is attached."""
+    messages = [HumanMessage(content="What is the conclusion?")]
+    assert (
+        pick_route(
+            "What is the conclusion?",
+            messages,
+            has_document=True,
+            knowledge_available=True,
+            use_knowledge_base=True,
+        )
+        == "query_documents"
+    )
+
+
+@pytest.mark.anyio
+async def test_decision_agent_honors_use_web_search():
+    result = await decision_agent(
+        {
+            "messages": [HumanMessage(content="Hello")],
+            "use_web_search": True,
+        }
+    )
+    assert result["agent_route"] == "web_search"
+    assert result["use_web_search"] is True
 
 
 @pytest.mark.anyio

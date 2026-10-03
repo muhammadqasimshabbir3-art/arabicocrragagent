@@ -1,9 +1,9 @@
 """Unit tests for chunking and preprocess modules."""
 
-from chunking.page_aware import PageAwareChunker
-from chunking.recursive import RecursiveChunker
-from ocr.base import OCRDocument, OCRPage
-from preprocess.arabic_normalize import dedupe_repeated_lines
+from core.chunking.page_aware import PageAwareChunker
+from core.chunking.recursive import RecursiveChunker
+from subagents.ocr.base import OCRDocument, OCRPage
+from core.preprocess.arabic_normalize import dedupe_repeated_lines
 
 
 def _doc(*pages: str) -> OCRDocument:

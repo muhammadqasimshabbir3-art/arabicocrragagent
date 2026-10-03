@@ -1,6 +1,6 @@
 """Regression tests for Arabic normalization on OCR/PDF quirks."""
 
-from preprocess.arabic_normalize import (
+from core.preprocess.arabic_normalize import (
     clean_ocr_text,
     looks_unreliable_arabic_extraction,
     normalize_arabic,

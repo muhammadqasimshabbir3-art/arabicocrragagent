@@ -5,8 +5,8 @@ from io import BytesIO
 
 import pytest
 
-from loaders.base import LoaderError
-from loaders.factory import decode_document_payload, load_document
+from core.loaders.base import LoaderError
+from core.loaders.factory import decode_document_payload, load_document
 
 
 def test_decode_rejects_empty():

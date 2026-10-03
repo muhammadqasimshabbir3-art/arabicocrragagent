@@ -55,6 +55,13 @@ export interface RunRequest {
   summarize_only?: boolean;
   /** Preferred answer language — independent of document / UI language. */
   response_language?: "ar" | "en";
+  /**
+   * ChatGPT-style source control.
+   * - auto: heuristics (default)
+   * - database: force knowledge-base path
+   * - web: force live internet / Google-style search
+   */
+  search_source?: "auto" | "database" | "web";
   conversation_messages?: Array<{ type: "human" | "ai"; content: string }>;
 }
 

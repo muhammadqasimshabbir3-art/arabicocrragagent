@@ -34,6 +34,52 @@ load_dotenv() {
     done < "$env_file"
 }
 
+# Ensure local .env has values needed for frontend ↔ backend connectivity.
+ensure_local_env_defaults() {
+    local env_file="${1:-.env}"
+    [ -f "$env_file" ] || return 1
+
+    if ! grep -q '^VITE_LANGGRAPH_API_URL=' "$env_file"; then
+        echo "VITE_LANGGRAPH_API_URL=http://127.0.0.1:${LANGGRAPH_PORT}" >> "$env_file"
+    fi
+    if ! grep -q '^VITE_LANGGRAPH_ASSISTANT_ID=' "$env_file"; then
+        echo "VITE_LANGGRAPH_ASSISTANT_ID=agent" >> "$env_file"
+    fi
+    if ! grep -q '^GROQ_MODEL=' "$env_file"; then
+        echo "GROQ_MODEL=openai/gpt-oss-120b" >> "$env_file"
+    fi
+    if ! grep -q '^OCR_ENGINE=' "$env_file"; then
+        echo "OCR_ENGINE=digital" >> "$env_file"
+    fi
+    if ! grep -q '^CORS_ALLOW_ORIGINS=' "$env_file"; then
+        echo "CORS_ALLOW_ORIGINS=http://localhost:5173,http://127.0.0.1:5173,http://localhost:8501,http://127.0.0.1:8501,http://localhost:2024,http://127.0.0.1:2024,https://smith.langchain.com" >> "$env_file"
+    else
+        # Append missing local UI origins without rewriting production CORS.
+        local cors
+        cors="$(grep '^CORS_ALLOW_ORIGINS=' "$env_file" | head -1 | cut -d= -f2-)"
+        local need origin
+        for origin in \
+            "http://localhost:${FRONTEND_PORT}" \
+            "http://127.0.0.1:${FRONTEND_PORT}" \
+            "http://localhost:${LANGGRAPH_PORT}" \
+            "http://127.0.0.1:${LANGGRAPH_PORT}"; do
+            case ",${cors}," in
+                *",${origin},"*) ;;
+                *) cors="${cors},${origin}" ;;
+            esac
+        done
+        # Normalize accidental leading comma
+        cors="${cors#,}"
+        sed -i "s|^CORS_ALLOW_ORIGINS=.*|CORS_ALLOW_ORIGINS=${cors}|" "$env_file"
+    fi
+}
+
+link_backend_env() {
+    local repo_root="${1:-.}"
+    local backend_dir="${2:-src}"
+    ln -sfn ../.env "${backend_dir}/.env" 2>/dev/null || cp -f "${repo_root}/.env" "${backend_dir}/.env"
+}
+
 stop_port() {
     local port="$1"
     local pids=""
@@ -71,6 +117,7 @@ stop_streamlit() {
 
 stop_frontend() {
     pkill -f "vite" 2>/dev/null || true
+    pkill -f "vite preview" 2>/dev/null || true
     stop_port "${FRONTEND_PORT}"
 }
 
@@ -84,7 +131,7 @@ stop_all_services() {
 
 wait_for_port() {
     local port="$1"
-    local retries="${2:-15}"
+    local retries="${2:-45}"
     local i=0
 
     while [ "$i" -lt "$retries" ]; do
@@ -98,5 +145,6 @@ wait_for_port() {
         i=$((i + 1))
     done
 
+    echo "Warning: port ${port} not ready after ${retries}s (continuing anyway)" >&2
     return 0
 }

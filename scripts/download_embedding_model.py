@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""Download the configured embedding model into models/ for local semantic search.
+"""Download the configured embedding model into src/models/ for local semantic search.
 
-Default: BAAI/bge-m3 (multilingual Arabic + English).
+Default: BAAI/bge-m3 (multilingual Arabic + English) → src/models/bge-m3.
 
 Usage (from repo root):
     python scripts/download_embedding_model.py
@@ -33,7 +33,7 @@ def main() -> int:
         normalize_embeddings=True,
     )
     print(f"Ready. dimensions={dim_count}, probe_len={len(probe)}")
-    print("OCR model downloads automatically on first scanned-document ingest.")
+    print("Text extraction is digital-only (no OCR model).")
     return 0
 
 

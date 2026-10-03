@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import base64
 
 import streamlit as st
@@ -27,7 +28,7 @@ st.markdown(
 )
 
 st.title("وثيقة")
-st.caption("وكيل المستندات العربية — OCR · فهرسة · إجابة موثّقة بالمصادر")
+st.caption("وكيل المستندات العربية — استخراج نص رقمي · فهرسة · إجابة موثّقة بالمصادر")
 
 col1, col2 = st.columns([1.4, 1])
 with col1:
@@ -70,10 +71,12 @@ if run:
             }
         )
     with st.spinner("جاري المعالجة…"):
-        result = graph.invoke(payload, config=GRAPH_RUN_CONFIG)
+        # Graph nodes are async — must use ainvoke (not sync invoke).
+        result = asyncio.run(graph.ainvoke(payload, config=GRAPH_RUN_CONFIG))
     st.success(result.get("task_plan_summary") or "Done")
     for message in result.get("messages") or []:
         role = getattr(message, "type", "ai")
         content = getattr(message, "content", str(message))
         with st.chat_message("user" if role == "human" else "assistant"):
-            st.markdown(content)
+            # Prefer plain text — avoid raw HTML/markdown injection via st.markdown.
+            st.text(str(content) if content is not None else "")

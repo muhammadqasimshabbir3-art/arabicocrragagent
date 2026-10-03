@@ -6,11 +6,10 @@ import type { StepState, StepStatus } from "../types";
 const SHORT: Record<string, { ar: string; en: string }> = {
   prepare_input: { ar: "إدخال", en: "Input" },
   decision_agent: { ar: "توجيه", en: "Route" },
-  ingest_document: { ar: "فهرسة", en: "Index" },
   query_documents: { ar: "إجابة", en: "Answer" },
   query_planner: { ar: "خطة", en: "Plan" },
   query_knowledge_base: { ar: "قاعدة", en: "KB" },
-  web_search: { ar: "ويب", en: "Web" },
+  web_search: { ar: "إنترنت", en: "Internet" },
   summarize_document: { ar: "تلخيص", en: "Summary" },
   call_model: { ar: "محادثة", en: "Chat" },
 };
@@ -30,9 +29,9 @@ function phaseLabel(
 ): string {
   if (completed && !running) return isAr ? "اكتمل" : "Completed";
   if (!running) return isAr ? "مسار المعالجة" : "Workflow";
-  if (activeId === "ingest_document") return isAr ? "مسح وفهرسة…" : "Scanning…";
+  if (activeId === "summarize_document") return isAr ? "مسح وفهرسة…" : "Scanning…";
   if (activeId === "query_planner") return isAr ? "كتابة الاستعلام…" : "Writing query…";
-  if (activeId === "web_search") return isAr ? "بحث الويب…" : "Web search…";
+  if (activeId === "web_search") return isAr ? "بحث الإنترنت…" : "Searching internet…";
   if (
     activeId === "query_documents" ||
     activeId === "query_knowledge_base" ||

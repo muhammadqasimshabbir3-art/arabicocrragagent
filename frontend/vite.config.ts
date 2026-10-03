@@ -42,6 +42,15 @@ export default defineConfig(({ mode }) => {
     },
     preview: {
       port: frontendPort,
+      strictPort: true,
+      // Same proxy as dev so preview builds can use VITE_LANGGRAPH_API_URL=/api
+      proxy: {
+        "/api": {
+          target: `http://127.0.0.1:${langgraphPort}`,
+          changeOrigin: true,
+          rewrite: (p) => p.replace(/^\/api/, ""),
+        },
+      },
     },
     build: {
       sourcemap: false,

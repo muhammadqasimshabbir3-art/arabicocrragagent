@@ -12,16 +12,8 @@ export const WORKFLOW_STEPS: WorkflowStep[] = [
     id: "decision_agent",
     nodes: ["decision_agent"],
     label: "Decision routing",
-    description: "Choose ingest, PDF query, knowledge DB, web search, summarize, or chat",
+    description: "Choose PDF query, knowledge DB, web search, summarize, or chat",
     emoji: "🧭",
-  },
-  {
-    id: "ingest_document",
-    nodes: ["ingest_document"],
-    label: "Document ingest",
-    description: "Load → OCR → normalize → chunk → embed → index",
-    optional: true,
-    emoji: "📜",
   },
   {
     id: "query_documents",
@@ -77,7 +69,6 @@ export const WORKFLOW_STEPS: WorkflowStep[] = [
 export const STEP_DETAILS: Record<string, { ar: string; en: string }> = {
   prepare_input: { ar: "تم تجهيز الإدخال.", en: "Input structured." },
   decision_agent: { ar: "تم التوجيه.", en: "Routed." },
-  ingest_document: { ar: "تمت فهرسة المستند.", en: "Document indexed." },
   query_documents: {
     ar: "إجابة موثّقة مع المصادر.",
     en: "Grounded answer with citations.",
@@ -102,10 +93,6 @@ export const STEP_DETAILS: Record<string, { ar: string; en: string }> = {
 
 /** Backend route → bilingual task-plan banner. */
 export const ROUTE_SUMMARIES: Record<string, { ar: string; en: string }> = {
-  ingest_document: {
-    ar: "فهرسة المستند → OCR → تقطيع → تضمين → فهرسة",
-    en: "Ingest document → OCR → chunk → embed → index",
-  },
   query_documents: {
     ar: "استرجاع → طبقة ثقة → إجابة موثّقة مع المصادر",
     en: "Retrieve → trust-layer read → grounded answer + citations",

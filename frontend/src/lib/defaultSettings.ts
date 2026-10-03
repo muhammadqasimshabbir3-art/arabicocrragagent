@@ -17,5 +17,6 @@ export function defaultRunSettings(): AgentRunSettings {
     document_mime_type: "",
     summarize_only: false,
     response_language: "ar",
+    search_source: "auto",
   };
 }

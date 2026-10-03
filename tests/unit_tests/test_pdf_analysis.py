@@ -1,7 +1,7 @@
 """Unit tests for PDF / document analysis helpers."""
 
-from agent.pdf_analysis import split_text_into_chunks
-from preprocess.arabic_normalize import clean_ocr_text, normalize_arabic
+from subagents.pdf_analysis import split_text_into_chunks
+from core.preprocess.arabic_normalize import clean_ocr_text, normalize_arabic
 
 
 def test_split_text_into_overlapping_page_chunks():

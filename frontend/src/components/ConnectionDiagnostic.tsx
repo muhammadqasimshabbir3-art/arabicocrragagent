@@ -44,7 +44,12 @@ export function ConnectionDiagnostic({
           detail: `URL=${LANGGRAPH_API_URL} · Key=${hasKey ? "set ✓" : "not set (optional)"}`,
         });
       } else {
-        update(0, { status: "fail", detail: "VITE_LANGGRAPH_API_URL is missing or resolves to /api" });
+        update(0, {
+          status: "fail",
+          detail:
+            "Set VITE_LANGGRAPH_API_URL to your absolute Railway URL " +
+            "(https://….up.railway.app), or replace REPLACE_WITH_RAILWAY_HOST in vercel.json and use /api.",
+        });
         return;
       }
 

@@ -5,14 +5,18 @@ Hardened against Qdrant cloud timeouts (small batches + retries + resume).
 
 Recommended (faster, enough for topic questions):
 
-  cd /home/engmatix/qasim_ai/ArabicOCRRAGAgent
   PYTHONUNBUFFERED=1 uv run python scripts/reseed_alf_layla_knowledge.py \\
     --chars 120000 --batch 8 --test-answer
+
+Full book (all OCR text):
+
+  PYTHONUNBUFFERED=1 uv run python scripts/reseed_alf_layla_knowledge.py \\
+    --full --batch 8 --sleep 0.4 --test-answer
 
 If it times out mid-way, resume without deleting:
 
   PYTHONUNBUFFERED=1 uv run python scripts/reseed_alf_layla_knowledge.py \\
-    --chars 120000 --batch 8 --resume --test-answer
+    --full --batch 8 --resume --sleep 0.4 --test-answer
 """
 
 from __future__ import annotations
@@ -66,7 +70,7 @@ def upsert_with_retries(store, part, vectors, filename: str, *, attempts: int = 
             time.sleep(wait)
             # Recreate client connection on next call by rebuilding store wrapper.
             try:
-                from vectorstore.factory import get_vector_store
+                from core.vectorstore.factory import get_vector_store
 
                 store_ref = get_vector_store(collection_name=store.collection_name)
                 store._client = store_ref._client  # type: ignore[attr-defined]
@@ -82,7 +86,12 @@ def main() -> int:
         "--chars",
         type=int,
         default=120_000,
-        help="How many characters to index from the start (default 120000).",
+        help="How many characters to index from the start (default 120000). Ignored if --full.",
+    )
+    parser.add_argument(
+        "--full",
+        action="store_true",
+        help="Index the entire Alf Layla OCR text file (full book).",
     )
     parser.add_argument(
         "--batch",
@@ -108,16 +117,16 @@ def main() -> int:
     )
     args = parser.parse_args()
 
-    from config.settings import get_settings
+    from core.config.settings import get_settings
 
     get_settings.cache_clear()
-    from chunking.factory import chunk_document
-    from embeddings.factory import embed_documents
-    from ocr.base import OCRDocument, OCRPage
+    from core.chunking.factory import chunk_document
+    from subagents.embeddings.factory import embed_documents
+    from subagents.ocr.base import OCRDocument, OCRPage
     from qdrant_client import QdrantClient
     from qdrant_client.http import models as qmodels
-    from retriever.knowledge import knowledge_collection_name, retrieve_from_knowledge
-    from vectorstore.factory import get_vector_store
+    from core.retriever.knowledge import knowledge_collection_name, retrieve_from_knowledge
+    from core.vectorstore.factory import get_vector_store
 
     settings = get_settings()
     collection = knowledge_collection_name()
@@ -125,7 +134,11 @@ def main() -> int:
     full = src.read_text(encoding="utf-8", errors="replace")
     full = full.replace("\r\n", "\n").replace("\r", "\n")
     full = re.sub(r"\n{3,}", "\n\n", full).strip()
-    text = full[: max(20_000, args.chars)]
+    if args.full:
+        text = full
+        log(f"FULL BOOK mode: indexing all {len(text)} chars")
+    else:
+        text = full[: max(20_000, args.chars)]
     log(f"Using chars={len(text)} / full={len(full)} collection={collection}")
 
     client = QdrantClient(url=settings.qdrant_url, api_key=settings.qdrant_api_key, timeout=180)
@@ -197,7 +210,7 @@ def main() -> int:
         log(f"[{i}] score={hit.score:.3f} page={hit.page_start} {snip}…")
 
     if args.test_answer:
-        from agent.document_qa import answer_knowledge_question_sync
+        from subagents.document_qa import answer_knowledge_question_sync
 
         log("\n=== Grounded answer ===")
         log(answer_knowledge_question_sync(q))

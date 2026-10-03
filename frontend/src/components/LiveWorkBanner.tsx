@@ -8,13 +8,12 @@ function detectPhase(steps: StepState[], running: boolean): Phase {
   if (!running) return "idle";
   const active = steps.find((s) => s.status === "running");
   if (!active) return "prepare";
-  if (active.id === "ingest_document") return "scan";
+  if (active.id === "summarize_document") return "scan";
   if (
     active.id === "query_documents" ||
     active.id === "query_knowledge_base" ||
     active.id === "query_planner" ||
     active.id === "web_search" ||
-    active.id === "summarize_document" ||
     active.id === "call_model"
   ) {
     return "answer";
@@ -35,8 +34,8 @@ const COPY: Record<
   scan: {
     arTitle: "جاري الفهرسة…",
     enTitle: "Indexing…",
-    arHint: "OCR وتقطيع وتضمين — قد يستغرق وقتًا على المستندات الكبيرة",
-    enHint: "OCR, chunking, embeddings — large docs can take a minute",
+    arHint: "استخراج نص وتقطيع وتضمين — قد يستغرق وقتًا على المستندات الكبيرة",
+    enHint: "Text extract, chunking, embeddings — large docs can take a minute",
   },
   answer: {
     arTitle: "جاري إنشاء الإجابة…",

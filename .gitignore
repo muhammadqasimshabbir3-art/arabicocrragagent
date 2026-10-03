@@ -2,12 +2,18 @@
 .env
 .env.*
 !.env.example
+!.env.vercel.example
 !**/.env.example
+!src/.env.example
+!src/deploy/.env.railway.example
+src/.env
 
 # Python
 .venv/
+src/.venv/
 venv/
 __pycache__/
+**/__pycache__/
 *.py[cod]
 *$py.class
 *.egg-info/
@@ -20,9 +26,11 @@ build/
 .coverage
 htmlcov/
 
-# Models & local data (download via scripts)
-models/**
-!models/README.md
+# Models & local data (download via scripts; keep READMEs)
+src/models/**
+!src/models/README.md
+**/model.safetensors
+src/data/chroma/
 data/chroma/
 data/**/*.pdf
 !data/samples/

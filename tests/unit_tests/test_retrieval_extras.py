@@ -1,10 +1,10 @@
 """Unit tests for citations, FAISS store, and lexical reranker."""
 
-from agent.document_qa import format_sources
-from chunking.base import TextChunk
-from reranker import rerank
-from vectorstore.base import RetrievedChunk
-from vectorstore.faiss_store import FaissVectorStore
+from subagents.document_qa import format_sources
+from core.chunking.base import TextChunk
+from subagents.reranker import rerank
+from core.vectorstore.base import RetrievedChunk
+from core.vectorstore.faiss_store import FaissVectorStore
 
 
 def test_format_sources_marks_used_passages():
@@ -33,7 +33,14 @@ def test_format_sources_marks_used_passages():
     assert "page 1" in footer
 
 
-def test_lexical_reranker_prefers_overlap():
+def test_lexical_reranker_prefers_overlap(monkeypatch):
+    from core.config.settings import get_settings
+
+    get_settings.cache_clear()
+    monkeypatch.setenv("RERANKER_BACKEND", "lexical")
+    monkeypatch.setenv("ENABLE_RERANKER", "true")
+    get_settings.cache_clear()
+
     chunks = [
         RetrievedChunk(
             chunk_id="1",
@@ -51,6 +58,7 @@ def test_lexical_reranker_prefers_overlap():
     ranked = rerank("ما هي سياسة الشحن؟", chunks, top_k=2)
     assert ranked[0].chunk_id == "1"
     assert ranked[0].metadata.get("rerank") == "lexical"
+    get_settings.cache_clear()
 
 
 def test_faiss_vector_store_roundtrip():

@@ -1,5 +1,6 @@
 import { FileUp, Play, RotateCcw, Square, X } from "lucide-react";
-import type { KeyboardEvent } from "react";
+import type { DragEvent, KeyboardEvent } from "react";
+import { useState } from "react";
 import { IS_PRODUCTION, LANGGRAPH_API_URL, USES_DEV_PROXY } from "../config";
 import type { AgentRunSettings, StepState } from "../types";
 
@@ -51,6 +52,8 @@ const ACCEPTED = [
   ".docx",
 ].join(",");
 
+const MAX_FILE_BYTES = 50 * 1024 * 1024;
+
 export function AgentConfigForm({
   settings,
   onChange,
@@ -68,8 +71,11 @@ export function AgentConfigForm({
   uiLang,
 }: AgentConfigFormProps) {
   const isAr = uiLang === "ar";
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const [dragOver, setDragOver] = useState(false);
   const filename = settings.pdf_filename || settings.document_filename || "";
   const responseLang = settings.response_language === "en" ? "en" : "ar";
+  const searchSource = settings.search_source ?? "auto";
   const activeStep = steps.find((s) => s.status === "running");
   const pdfMode = Boolean(filename);
   // Once the answer is on screen, leave "busy" UI even if the run flag lags.
@@ -78,7 +84,6 @@ export function AgentConfigForm({
     busy &&
     pdfMode &&
     (Boolean(settings.summarize_only || settings.pdf_summarize_only) ||
-      activeStep?.id === "ingest_document" ||
       activeStep?.id === "summarize_document" ||
       activeStep?.id === "prepare_input" ||
       activeStep?.id === "decision_agent");
@@ -98,16 +103,29 @@ export function AgentConfigForm({
     uploadBig: isAr ? "① ارفع الملف هنا" : "① Drop your file here",
     uploadClick: isAr ? "أو انقر للاختيار" : "or click to choose",
     uploadHint: isAr
-      ? "PDF · صور · TXT · DOCX — يُلخَّص تلقائيًا بعد الرفع"
-      : "PDF · images · TXT · DOCX — auto-summarizes on upload",
+      ? "PDF · صور · TXT · DOCX — يُلخَّص تلقائيًا بعد الرفع (حد أقصى 50MB)"
+      : "Text-layer PDF · TXT · DOCX — digital text extraction (max 50MB)",
+    fileTooLarge: isAr
+      ? "الملف أكبر من 50 ميجابايت. اختر ملفًا أصغر."
+      : "File exceeds 50MB. Choose a smaller file.",
     askBig: isAr ? "② اكتب سؤالك" : "② Type your question",
     askHintPdf: isAr
       ? "اسأل عن الملف المرفوع بعد اكتمال الفهرسة"
       : "Ask about the uploaded file after indexing finishes",
     askHintKb: isAr
-      ? "بدون ملف: يبحث في قاعدة المعرفة (BM25 + متجهات)"
-      : "No file: searches the knowledge DB (BM25 + vectors)",
+      ? "بدون ملف: الوضع التلقائي يختار قاعدة المعرفة أو بحث الإنترنت أو المحادثة"
+      : "No file: Auto picks database, internet search, or chat",
+    askHintWeb: isAr
+      ? "بحث الإنترنت مفعّل: يبحث على الويب (مثل بحث جوجل) لهذا السؤال"
+      : "Internet search on: live web lookup (Google-style) for this question",
+    askHintDb: isAr
+      ? "قاعدة البيانات مفعّلة: بحث في المعرفة المفهرسة فقط"
+      : "Database on: search the seeded knowledge base only",
     answerLang: isAr ? "لغة الإجابة" : "Answer language",
+    searchSource: isAr ? "مصدر البحث" : "Search source",
+    sourceAuto: isAr ? "تلقائي" : "Auto",
+    sourceDb: isAr ? "قاعدة البيانات" : "Database",
+    sourceWeb: isAr ? "بحث الإنترنت" : "Search Internet",
     placeholder: isAr
       ? pdfMode
         ? "اكتب سؤالك عن المستند…"
@@ -117,9 +135,14 @@ export function AgentConfigForm({
         : "Type your question here…",
     modePdf: isAr ? "وضع المستند" : "Document mode",
     modeKb: isAr ? "وضع قاعدة المعرفة" : "Knowledge mode",
+    modeWeb: isAr ? "بحث الإنترنت" : "Internet search",
+    modeDb: isAr ? "وضع قاعدة البيانات" : "Database mode",
     send: isAr ? "اسأل الآن" : "Ask now",
     sendWait: isAr ? "جاري العمل…" : "Working…",
     stop: isAr ? "إيقاف" : "Stop",
+    stopHint: isAr
+      ? "قد يستمر الخادم في المعالجة بعد الإيقاف المحلي."
+      : "Server may continue processing after local cancel.",
     reset: isAr ? "مسح" : "Clear",
     clear: isAr ? "إزالة" : "Remove",
     ready: isAr ? "جاري المعالجة" : "Processing",
@@ -139,6 +162,11 @@ export function AgentConfigForm({
 
   const readDocumentFile = (file: File) => {
     if (busy || !serverOnline) return;
+    if (file.size > MAX_FILE_BYTES) {
+      setUploadError(copy.fileTooLarge);
+      return;
+    }
+    setUploadError(null);
     const reader = new FileReader();
     reader.onload = () => {
       const data = typeof reader.result === "string" ? reader.result : "";
@@ -158,6 +186,7 @@ export function AgentConfigForm({
   };
 
   const clearDocument = () => {
+    setUploadError(null);
     onChange("pdf_data_base64", "");
     onChange("pdf_filename", "");
     onChange("document_data_base64", "");
@@ -175,11 +204,37 @@ export function AgentConfigForm({
     }
   };
 
+  const onDragOver = (e: DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!busy && serverOnline) setDragOver(true);
+  };
+
+  const onDragLeave = (e: DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragOver(false);
+  };
+
+  const onDrop = (e: DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragOver(false);
+    if (busy || !serverOnline) return;
+    const file = e.dataTransfer.files?.[0];
+    if (file) readDocumentFile(file);
+  };
+
   return (
     <section className="action-desk">
       <div className="action-grid with-answer">
         <div className={`action-card upload-card${filename ? " has-file" : ""}${isDocBusy ? " is-busy" : ""}`}>
-          <div className={`upload-zone giant${filename ? " has-file" : ""}`}>
+          <div
+            className={`upload-zone giant${filename ? " has-file" : ""}${dragOver ? " drag-over" : ""}`}
+            onDragOver={onDragOver}
+            onDragLeave={onDragLeave}
+            onDrop={onDrop}
+          >
             <FileUp className="upload-icon" size={42} strokeWidth={1.75} />
             <strong className="upload-big-label">{copy.uploadBig}</strong>
             <span className="upload-click">{copy.uploadClick}</span>
@@ -196,6 +251,7 @@ export function AgentConfigForm({
               aria-label={copy.uploadBig}
             />
           </div>
+          {uploadError && <p className="hint warn">{uploadError}</p>}
           {filename && (
             <div className="file-chip">
               <div>
@@ -224,34 +280,99 @@ export function AgentConfigForm({
         </div>
 
         <div className="action-card ask-card">
-          <div className="answer-lang-row">
-            <span className="answer-lang-label">{copy.answerLang}</span>
-            <div className="answer-lang-toggle" role="group" aria-label={copy.answerLang}>
-              <button
-                type="button"
-                className={responseLang === "ar" ? "active" : ""}
-                disabled={busy}
-                onClick={() => onChange("response_language", "ar")}
-              >
-                العربية
-              </button>
-              <button
-                type="button"
-                className={responseLang === "en" ? "active" : ""}
-                disabled={busy}
-                onClick={() => onChange("response_language", "en")}
-              >
-                English
-              </button>
+          <div className="composer-toggles">
+            <div className="answer-lang-row">
+              <span className="answer-lang-label">{copy.answerLang}</span>
+              <div className="answer-lang-toggle" role="group" aria-label={copy.answerLang}>
+                <button
+                  type="button"
+                  className={responseLang === "ar" ? "active" : ""}
+                  disabled={busy}
+                  onClick={() => onChange("response_language", "ar")}
+                >
+                  العربية
+                </button>
+                <button
+                  type="button"
+                  className={responseLang === "en" ? "active" : ""}
+                  disabled={busy}
+                  onClick={() => onChange("response_language", "en")}
+                >
+                  English
+                </button>
+              </div>
+            </div>
+            <div className="answer-lang-row">
+              <span className="answer-lang-label">{copy.searchSource}</span>
+              <div className="answer-lang-toggle" role="group" aria-label={copy.searchSource}>
+                <button
+                  type="button"
+                  className={searchSource === "auto" ? "active" : ""}
+                  disabled={busy}
+                  onClick={() => onChange("search_source", "auto")}
+                >
+                  {copy.sourceAuto}
+                </button>
+                <button
+                  type="button"
+                  className={searchSource === "database" ? "active" : ""}
+                  disabled={busy}
+                  onClick={() => onChange("search_source", "database")}
+                  title={
+                    isAr
+                      ? "ابحث في قاعدة المعرفة المفهرسة فقط"
+                      : "Search the seeded knowledge base only"
+                  }
+                >
+                  {copy.sourceDb}
+                </button>
+                <button
+                  type="button"
+                  className={searchSource === "web" ? "active" : ""}
+                  disabled={busy}
+                  onClick={() => onChange("search_source", "web")}
+                  title={
+                    isAr
+                      ? "بحث الإنترنت / بحث جوجل لهذا السؤال"
+                      : "Search the internet (Google-style) for this question"
+                  }
+                >
+                  {copy.sourceWeb}
+                </button>
+              </div>
             </div>
           </div>
           <label className="ask-label" htmlFor="wathiqa-question">
             {copy.askBig}
           </label>
-          <div className={`mode-pill ${pdfMode ? "pdf" : "kb"}`}>
-            {pdfMode ? copy.modePdf : copy.modeKb}
+          <div
+            className={`mode-pill ${
+              searchSource === "web"
+                ? "web"
+                : searchSource === "database"
+                  ? "db"
+                  : pdfMode
+                    ? "pdf"
+                    : "kb"
+            }`}
+          >
+            {searchSource === "web"
+              ? copy.modeWeb
+              : searchSource === "database"
+                ? copy.modeDb
+                : pdfMode
+                  ? copy.modePdf
+                  : copy.modeKb}
           </div>
-          <p className="ask-mode-hint">{pdfMode ? copy.askHintPdf : copy.askHintKb}</p>
+          <p className="ask-mode-hint">
+            {searchSource === "web"
+              ? copy.askHintWeb
+              : searchSource === "database"
+                ? copy.askHintDb
+                : pdfMode
+                  ? copy.askHintPdf
+                  : copy.askHintKb}
+          </p>
           <textarea
             id="wathiqa-question"
             className="composer-input giant"
@@ -303,6 +424,7 @@ export function AgentConfigForm({
               {copy.reset}
             </button>
           </div>
+          {busy && <p className="hint muted cancel-note">{copy.stopHint}</p>}
         </div>
 
         <div

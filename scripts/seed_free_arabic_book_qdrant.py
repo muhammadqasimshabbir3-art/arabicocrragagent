@@ -95,11 +95,11 @@ def _download_book_text(book: dict) -> Path:
 
 
 def _build_index_from_text(book_file: Path, title: str, authors: str):
-    from chunking.factory import chunk_document
-    from embeddings.factory import embed_documents
-    from ocr.base import OCRDocument, OCRPage
-    from retriever.semantic import DocumentIndex
-    from vectorstore.factory import get_vector_store
+    from core.chunking.factory import chunk_document
+    from subagents.embeddings.factory import embed_documents
+    from subagents.ocr.base import OCRDocument, OCRPage
+    from core.retriever.semantic import DocumentIndex
+    from core.vectorstore.factory import get_vector_store
 
     text = book_file.read_text(encoding="utf-8")
     # Create pseudo-pages so existing chunking/retrieval pipeline can run unchanged.
@@ -131,7 +131,7 @@ def _build_index_from_text(book_file: Path, title: str, authors: str):
     if not chunks:
         raise RuntimeError("Chunking produced no text chunks.")
     embeddings = embed_documents([chunk.text for chunk in chunks])
-    from retriever.knowledge import knowledge_collection_name
+    from core.retriever.knowledge import knowledge_collection_name
 
     collection_name = knowledge_collection_name()
     store = get_vector_store(collection_name=collection_name)
@@ -155,7 +155,7 @@ def _build_index_from_text(book_file: Path, title: str, authors: str):
 
 
 def _retrieve(index, question: str, top_k: int = 5) -> None:
-    from retriever.semantic import retrieve
+    from core.retriever.semantic import retrieve
 
     hits = retrieve(index, question, top_k=top_k)
     print(f"\nRetrieve: {question}")
@@ -168,7 +168,7 @@ def _retrieve(index, question: str, top_k: int = 5) -> None:
 
 
 def _answer(index, question: str) -> None:
-    from agent.document_qa import answer_document_question_sync
+    from subagents.document_qa import answer_document_question_sync
 
     print(f"\nGrounded answer: {question}")
     answer = answer_document_question_sync(index, question)
@@ -176,7 +176,7 @@ def _answer(index, question: str) -> None:
 
 
 def main() -> int:
-    from config.settings import get_settings
+    from core.config.settings import get_settings
 
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--search", default="", help="Optional Arabic/English search keyword.")

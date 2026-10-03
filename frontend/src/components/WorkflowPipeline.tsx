@@ -34,14 +34,8 @@ const LABELS: Record<string, { ar: string; en: string; arDesc: string; enDesc: s
   decision_agent: {
     ar: "توجيه القرار",
     en: "Route decision",
-    arDesc: "اختيار مسار: فهرسة أو سؤال أو تلخيص",
-    enDesc: "Choose ingest, query, summarize, or chat",
-  },
-  ingest_document: {
-    ar: "فهرسة المستند",
-    en: "Ingest document",
-    arDesc: "تحميل → OCR → تقطيع → تضمين → فهرسة",
-    enDesc: "Load → OCR → chunk → embed → index",
+    arDesc: "اختيار مسار: سؤال أو تلخيص أو قاعدة معرفة أو ويب",
+    enDesc: "Choose query, summarize, knowledge, web, or chat",
   },
   query_documents: {
     ar: "إجابة موثّقة",

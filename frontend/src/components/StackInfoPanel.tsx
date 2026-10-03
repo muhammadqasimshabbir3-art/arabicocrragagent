@@ -11,7 +11,7 @@ export function StackInfoPanel({ uiLang }: StackInfoPanelProps) {
   const isAr = uiLang === "ar";
   const vectorDb = envLabel("VITE_STACK_VECTOR_DB", "Chroma · data/chroma");
   const embeddings = envLabel("VITE_STACK_EMBEDDINGS", "BAAI/bge-m3");
-  const ocr = envLabel("VITE_STACK_OCR", "Qari-OCR v0.3");
+  const ocr = envLabel("VITE_STACK_OCR", "Digital text (pypdf)");
 
   return (
     <aside className="panel stack-panel">
@@ -26,7 +26,7 @@ export function StackInfoPanel({ uiLang }: StackInfoPanelProps) {
           <strong>{embeddings}</strong>
         </li>
         <li>
-          <span>OCR</span>
+          <span>{isAr ? "استخراج النص" : "Text extract"}</span>
           <strong>{ocr}</strong>
         </li>
         <li>

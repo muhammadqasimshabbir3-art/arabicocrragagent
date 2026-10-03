@@ -1,7 +1,7 @@
 """Build a free sample Arabic PDF (MIT-licensed sample content we author here).
 
 Uses PyMuPDF (already a project dependency) so the PDF has a digital text layer —
-OCR is not required for this smoke test; Qari still applies to scanned uploads.
+Digital text sample — no neural OCR required.
 """
 
 from __future__ import annotations

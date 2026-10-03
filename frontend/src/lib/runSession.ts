@@ -30,8 +30,25 @@ function readStorage(): RunSession | null {
   return null;
 }
 
+function stripHeavyState(state?: AgentState): AgentState | undefined {
+  if (!state) return undefined;
+  const {
+    document_data_base64: _d,
+    pdf_data_base64: _p,
+    ...rest
+  } = state as AgentState & {
+    document_data_base64?: string;
+    pdf_data_base64?: string;
+  };
+  return rest as AgentState;
+}
+
 function writeStorage(session: RunSession): void {
-  const raw = JSON.stringify(session);
+  const safe: RunSession = {
+    ...session,
+    partialState: stripHeavyState(session.partialState),
+  };
+  const raw = JSON.stringify(safe);
   for (const store of [sessionStorage, localStorage]) {
     try {
       store.setItem(STORAGE_KEY, raw);

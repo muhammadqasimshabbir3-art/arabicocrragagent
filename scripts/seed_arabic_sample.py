@@ -1,25 +1,19 @@
 #!/usr/bin/env python3
-"""Seed a free Arabic sample PDF into the real (persistent) Chroma vector DB.
+"""Seed a free Arabic sample PDF into the persistent Chroma vector DB.
 
-Stack used here (all free / open source except the optional Groq LLM answer):
+Stack (free / open source except optional Groq answer):
 
-  Vector DB   → Chroma (Apache-2.0) on disk at data/chroma
-                https://github.com/chroma-core/chroma
-  Embeddings  → BAAI/bge-m3 (MIT) via sentence-transformers
-                https://huggingface.co/BAAI/bge-m3
-  OCR         → Not needed for this digital PDF (text layer).
-                Scanned docs use Qari-OCR (Apache-2.0 weights on HF):
-                NAMAA-Space/Qari-OCR-v0.3-VL-2B-Instruct
-  Sample doc  → MIT sample Arabic circular authored in-repo
-                (scripts/make_arabic_sample_pdf.py)
+  Vector DB   → Chroma on disk at src/data/chroma (default)
+  Embeddings  → BAAI/bge-m3 under src/models/bge-m3
+  Text        → Digital PDF text layer (pypdf); no neural OCR
+  Sample doc  → MIT sample Arabic circular (scripts/make_arabic_sample_pdf.py)
 
 Usage (from repo root):
     uv run python scripts/seed_arabic_sample.py
     uv run python scripts/seed_arabic_sample.py --ask "ما مدة الإجازة السنوية؟"
-    uv run python scripts/seed_arabic_sample.py --ask "What is the annual leave duration?"
 
-Requires embedding model on disk or network access for first download:
-    uv run python scripts/download_embedding_model.py
+Prefetch embeddings:
+    uv run python scripts/ensure_models.py
 """
 
 from __future__ import annotations
@@ -55,8 +49,8 @@ def _ensure_sample_pdf() -> Path:
 
 
 def _index_pdf(pdf_path: Path, *, into_knowledge: bool = True):
-    from config.settings import get_settings
-    from retriever.semantic import get_or_build_index, upsert_index_into_knowledge
+    from core.config.settings import get_settings
+    from core.retriever.semantic import get_or_build_index, upsert_index_into_knowledge
 
     settings = get_settings()
     payload = base64.b64encode(pdf_path.read_bytes()).decode("ascii")
@@ -69,7 +63,7 @@ def _index_pdf(pdf_path: Path, *, into_knowledge: bool = True):
     print("── Indexed ──────────────────────────────────────────")
     print(f"  file          : {pdf_path}")
     print(f"  fingerprint   : {index.fingerprint[:16]}…")
-    print(f"  OCR engine    : {index.ocr.engine}  (digital = no Qari needed)")
+    print(f"  Text engine   : {index.ocr.engine}")
     print(f"  pages/chunks  : {index.metadata.get('page_count')} / {len(index.chunks)}")
     print(f"  vector DB     : {settings.vectorstore_backend} @ {persist}")
     print(f"  collection    : doc_{index.fingerprint[:16]}")
@@ -82,7 +76,7 @@ def _index_pdf(pdf_path: Path, *, into_knowledge: bool = True):
 
 
 def _retrieve(index, question: str, top_k: int = 3) -> None:
-    from retriever.semantic import retrieve
+    from core.retriever.semantic import retrieve
 
     hits = retrieve(index, question, top_k=top_k)
     print(f"\n── Retrieve: {question!r} ─────────────────")
@@ -95,7 +89,7 @@ def _retrieve(index, question: str, top_k: int = 3) -> None:
 
 
 def _answer(index, question: str) -> None:
-    from agent.document_qa import answer_document_question_sync
+    from subagents.document_qa import answer_document_question_sync
 
     print(f"\n── Grounded answer: {question!r} ──────────")
     try:
@@ -127,13 +121,33 @@ def main() -> int:
         help="Optional path to another Arabic PDF to index instead of the sample.",
     )
     parser.add_argument(
+        "--large",
+        action="store_true",
+        help="Use the ~500–900 line policy handbook sample instead of the small circular.",
+    )
+    parser.add_argument(
         "--no-knowledge",
         action="store_true",
         help="Do not also upsert into the shared KNOWLEDGE_COLLECTION.",
     )
     args = parser.parse_args()
 
-    pdf_path = args.pdf.resolve() if args.pdf else _ensure_sample_pdf()
+    if args.pdf:
+        pdf_path = args.pdf.resolve()
+    elif args.large:
+        large = ROOT / "data" / "samples" / "arabic_policy_handbook_large.pdf"
+        if not large.is_file():
+            maker = ROOT / "scripts" / "make_arabic_large_sample_pdf.py"
+            import importlib.util
+
+            spec = importlib.util.spec_from_file_location("make_large", maker)
+            assert spec and spec.loader
+            mod = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(mod)
+            mod.write_arabic_large_sample_pdf(large, target_lines=700)
+        pdf_path = large
+    else:
+        pdf_path = _ensure_sample_pdf()
     if not pdf_path.is_file():
         print(f"PDF not found: {pdf_path}", file=sys.stderr)
         return 1
@@ -141,7 +155,7 @@ def main() -> int:
     print("Stack (free / open source):")
     print("  • Vector DB  : configured via VECTORSTORE_BACKEND (chroma/faiss/qdrant)")
     print("  • Embeddings : BAAI/bge-m3 (MIT) — multilingual Arabic+English")
-    print("  • OCR        : Qari-OCR for scans; this sample uses digital text")
+    print("  • Text       : digital extraction (text-layer PDF)")
     print()
 
     index = _index_pdf(pdf_path, into_knowledge=not args.no_knowledge)
