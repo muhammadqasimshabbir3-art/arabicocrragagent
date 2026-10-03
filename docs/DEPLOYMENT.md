@@ -40,6 +40,8 @@ OCR_ENGINE=digital
 
 Use `openai/gpt-oss-20b` only if you need lower cost/latency. Do **not** use retired `llama-3.1-8b-instant` / `llama-3.3-70b-versatile`.
 
+**Do not** add `langgraph-api` to `src/pyproject.toml` — the Docker base image already includes it. Pinning it breaks Railway builds (`grpcio` conflict). See [TROUBLESHOOTING.md](./TROUBLESHOOTING.md).
+
 ---
 
 ## Vercel (frontend)

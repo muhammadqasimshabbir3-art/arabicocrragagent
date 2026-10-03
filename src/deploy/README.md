@@ -7,7 +7,7 @@ Set the Railway service **Root Directory** to **`src`**.
 | `Dockerfile` | LangGraph API image |
 | `railway.json` | Builder + `/ok` healthcheck |
 | `langgraph.json` | Graph: `agent/graph.py:graph` |
-| `pyproject.toml` / `uv.lock` | Python deps |
+| `pyproject.toml` / `uv.lock` | App deps only — **do not** pin `langgraph-api` (image provides it) |
 | `models/` | BGE-M3 weights |
 | `data/` | Chroma persistence |
 | `deploy/.env.railway.example` | Env template |

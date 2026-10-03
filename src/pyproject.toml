@@ -16,7 +16,8 @@ dependencies = [
     "langchain-community>=0.1.0",
     "requests>=2.31.0",
     "streamlit>=1.28.0",
-    "langgraph-api==0.10.0",
+    # Do NOT pin langgraph-api here — Railway/Docker base image
+    # langchain/langgraph-api already provides it; pinning breaks grpcio resolve.
     "pypdf>=4.3.0",
     "chromadb>=0.5.0",
     "sentence-transformers>=3.0.0",
